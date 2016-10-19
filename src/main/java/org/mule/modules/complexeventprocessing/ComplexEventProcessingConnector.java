@@ -3,10 +3,7 @@ package org.mule.modules.complexeventprocessing;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
@@ -27,7 +24,6 @@ import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.Source;
 import org.mule.api.callback.SourceCallback;
 import org.mule.api.context.MuleContextAware;
-import org.mule.devkit.processor.ExpressionEvaluatorSupport;
 import org.mule.extension.annotations.param.Optional;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,7 +33,6 @@ import org.mule.util.UUID;
 
 import com.mycila.event.Dispatcher;
 import com.mycila.event.Dispatchers;
-import com.mycila.event.ErrorHandlers;
 import com.mycila.event.Topic;
 
 @Connector(name = "complex-event-processing", friendlyName = "ComplexEventProcessing")
@@ -63,11 +58,13 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 	@PostConstruct
 	public void initialize() throws Exception {
 		logger.info("Initializing Flink");
+
 		executionEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
 		executionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
-		executionEnvironment.addDefaultKryoSerializer(org.mule.api.MuleMessage.class, MuleMessageSerializer.class);
-		dispatcher = Dispatchers.asynchronousSafe();
-		logger.info("MULE CONTEXT: " + muleContext);
+		executionEnvironment.addDefaultKryoSerializer(org.mule.api.MuleMessage.class, 
+				MuleMessageSerializer.class);
+		
+		dispatcher = Dispatchers.asynchronousSafe();	
 	}
 
 	
@@ -101,7 +98,8 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 	}
 
 	@Source
-	public synchronized void listen(String streams, @Optional TimeUnit timeUnit, @Optional Long interval, @Optional String filterExpression, final SourceCallback callback) {
+	public synchronized void listen(String streams, @Optional TimeUnit timeUnit, 
+			@Optional Long interval, @Optional String filterExpression, final SourceCallback callback) {
 		logger.info("Registering window for streams: " + streams);
 
 		String callbackId = UUID.getUUID().toString();
@@ -113,12 +111,14 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 				callbackId);
 		dataStream.assignTimestampsAndWatermarks(new StreamTimestampExtractor());
 
-		KeyedStream<Tuple3<String, MuleMessage, Date>, String> keyedEvents = dataStream.keyBy(new StreamNameKeySelector());
+		KeyedStream<Tuple3<String, MuleMessage, Date>, String> keyedEvents = 
+				dataStream.keyBy(new StreamNameKeySelector());
 		if (interval != null) {
 			keyedEvents.window(TumblingEventTimeWindows.of(Time.of(interval, timeUnit))).apply(
 					new StreamWindowFunction(streams.split(","), filterExpression))
 					.addSink(new SourceCallbackSinkFunction(callbackId));
 		} else {
+			
 			// keyedEvents.filter((new StreamWindowFunction(streams.split(","))
 		}
 	}

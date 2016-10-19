@@ -50,7 +50,8 @@ public class StreamWindowFunction implements WindowFunction<Tuple3<String, MuleM
 				}
 			}
 		}
-		DefaultMessageCollection collection = new DefaultMessageCollection(ComplexEventProcessingConnector.muleContext);
+		DefaultMessageCollection collection = 
+				new DefaultMessageCollection(ComplexEventProcessingConnector.muleContext);
 		collection.addMessages(events);
 		out.collect(collection);		
 	}
