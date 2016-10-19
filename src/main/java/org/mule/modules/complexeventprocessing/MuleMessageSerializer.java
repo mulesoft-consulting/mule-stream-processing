@@ -50,45 +50,38 @@ public class MuleMessageSerializer extends Serializer<MuleMessage> {
 		return message;
 	}
 
-
 	@Override
 	public void write(Kryo kryo, Output output, final MuleMessage message) {
 
 		FieldSerializer<DefaultMuleMessage> serializer = new FieldSerializer<>(kryo, DefaultMuleMessage.class);
 		serializer.write(kryo, output, (DefaultMuleMessage) message);
 		kryo.writeClassAndObject(output, message.getPayload());
-		
-		  new AttachmentSerializer()
-	        {
 
-	            @Override
-	            protected Object getAttachment(String name)
-	            {
-	                return message.getInboundAttachment(name);
-	            }
+		new AttachmentSerializer() {
 
-	            @Override
-	            protected Collection<String> getAttachmentNames()
-	            {
-	                return message.getInboundAttachmentNames();
-	            }
-	        }.serializeAttachments(kryo, output);
+			@Override
+			protected Object getAttachment(String name) {
+				return message.getInboundAttachment(name);
+			}
 
-	        new AttachmentSerializer()
-	        {
+			@Override
+			protected Collection<String> getAttachmentNames() {
+				return message.getInboundAttachmentNames();
+			}
+		}.serializeAttachments(kryo, output);
 
-	            @Override
-	            protected Object getAttachment(String name)
-	            {
-	                return message.getOutboundAttachment(name);
-	            }
+		new AttachmentSerializer() {
 
-	            @Override
-	            protected Collection<String> getAttachmentNames()
-	            {
-	                return message.getOutboundAttachmentNames();
-	            }
-	        }.serializeAttachments(kryo, output);
+			@Override
+			protected Object getAttachment(String name) {
+				return message.getOutboundAttachment(name);
+			}
+
+			@Override
+			protected Collection<String> getAttachmentNames() {
+				return message.getOutboundAttachmentNames();
+			}
+		}.serializeAttachments(kryo, output);
 
 	}
 
@@ -109,25 +102,21 @@ public class MuleMessageSerializer extends Serializer<MuleMessage> {
 
 		protected abstract void acceptAttachment(String key, DataHandler data) throws Exception;
 	}
-	
-    private abstract class AttachmentSerializer
-    {
 
-        protected void serializeAttachments(Kryo kryo, Output output)
-        {
-            Map<String, DataHandler> attachments = new HashMap<String, DataHandler>();
-            for (String name : getAttachmentNames())
-            {
-                attachments.put(name, (DataHandler) getAttachment(name));
-            }
+	private abstract class AttachmentSerializer {
 
-            kryo.writeObject(output, attachments);
+		protected void serializeAttachments(Kryo kryo, Output output) {
+			Map<String, DataHandler> attachments = new HashMap<String, DataHandler>();
+			for (String name : getAttachmentNames()) {
+				attachments.put(name, (DataHandler) getAttachment(name));
+			}
 
-        }
+			kryo.writeObject(output, attachments);
 
-        protected abstract Collection<String> getAttachmentNames();
+		}
 
-        protected abstract Object getAttachment(String name);
-    }
+		protected abstract Collection<String> getAttachmentNames();
+
+		protected abstract Object getAttachment(String name);
+	}
 }
-

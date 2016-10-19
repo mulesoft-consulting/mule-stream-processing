@@ -14,14 +14,19 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
+import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleMessage;
 import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.Source;
+import org.mule.api.annotations.param.Default;
 import org.mule.api.callback.SourceCallback;
 import org.mule.api.context.MuleContextAware;
 import org.mule.extension.annotations.param.Optional;
@@ -99,7 +104,8 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 
 	@Source
 	public synchronized void listen(String streams, @Optional TimeUnit timeUnit, 
-			@Optional Long interval, @Optional String filterExpression, final SourceCallback callback) {
+			@Optional Long interval, @Optional String filterExpression, 
+			final SourceCallback callback) {
 		logger.info("Registering window for streams: " + streams);
 
 		String callbackId = UUID.getUUID().toString();
@@ -107,7 +113,8 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 
 		logger.info("Registering event source for stream: " + streams);
 
-		DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment.addSource(new ObjectSource(),
+		DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment
+				.addSource(new ObjectSource(),
 				callbackId);
 		dataStream.assignTimestampsAndWatermarks(new StreamTimestampExtractor());
 
@@ -118,8 +125,10 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 					new StreamWindowFunction(streams.split(","), filterExpression))
 					.addSink(new SourceCallbackSinkFunction(callbackId));
 		} else {
+			keyedEvents.window(GlobalWindows.create()).apply(
+					new GlobalWindowFunction(streams.split(","), filterExpression))
+			.addSink(new SourceCallbackSinkFunction(callbackId));
 			
-			// keyedEvents.filter((new StreamWindowFunction(streams.split(","))
 		}
 	}
 
