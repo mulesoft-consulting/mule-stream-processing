@@ -19,6 +19,8 @@ import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger;
+import org.apache.flink.streaming.api.windowing.triggers.PurgingTrigger;
 import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleMessage;
@@ -27,9 +29,9 @@ import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.Source;
 import org.mule.api.annotations.param.Default;
+import org.mule.api.annotations.param.Optional;
 import org.mule.api.callback.SourceCallback;
 import org.mule.api.context.MuleContextAware;
-import org.mule.extension.annotations.param.Optional;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -58,7 +60,6 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 	private StreamExecutionEnvironment executionEnvironment;
 
 	private boolean started = false;
-	
 
 	@PostConstruct
 	public void initialize() throws Exception {
@@ -66,13 +67,11 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 
 		executionEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
 		executionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
-		executionEnvironment.addDefaultKryoSerializer(org.mule.api.MuleMessage.class, 
-				MuleMessageSerializer.class);
-		
-		dispatcher = Dispatchers.asynchronousSafe();	
+		executionEnvironment.addDefaultKryoSerializer(org.mule.api.MuleMessage.class, MuleMessageSerializer.class);
+
+		dispatcher = Dispatchers.asynchronousSafe();
 	}
 
-	
 	public void startExecutionEnvironment() throws Exception {
 		logger.info("Starting Flink execution environment in background thread");
 		Executors.newSingleThreadExecutor().execute(new Runnable() {
@@ -103,9 +102,8 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 	}
 
 	@Source
-	public synchronized void listen(String streams, @Optional TimeUnit timeUnit, 
-			@Optional Long interval, @Optional String filterExpression, 
-			final SourceCallback callback) {
+	public synchronized void listen(String streams, @Optional TimeUnit timeUnit, @Optional Long interval,
+			@Optional String filterExpression, final SourceCallback callback) {
 		logger.info("Registering window for streams: " + streams);
 
 		String callbackId = UUID.getUUID().toString();
@@ -113,22 +111,22 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 
 		logger.info("Registering event source for stream: " + streams);
 
-		DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment
-				.addSource(new ObjectSource(),
+		DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment.addSource(new ObjectSource(),
 				callbackId);
 		dataStream.assignTimestampsAndWatermarks(new StreamTimestampExtractor());
 
-		KeyedStream<Tuple3<String, MuleMessage, Date>, String> keyedEvents = 
-				dataStream.keyBy(new StreamNameKeySelector());
+		KeyedStream<Tuple3<String, MuleMessage, Date>, String> keyedEvents = dataStream
+				.keyBy(new StreamNameKeySelector());
 		if (interval != null) {
-			keyedEvents.window(TumblingEventTimeWindows.of(Time.of(interval, timeUnit))).apply(
-					new StreamWindowFunction(streams.split(","), filterExpression))
+			keyedEvents.window(TumblingEventTimeWindows.of(Time.of(interval, timeUnit)))
+					.apply(new StreamWindowFunction(streams.split(","), filterExpression))
 					.addSink(new SourceCallbackSinkFunction(callbackId));
 		} else {
-			keyedEvents.window(GlobalWindows.create()).apply(
-					new GlobalWindowFunction(streams.split(","), filterExpression))
-			.addSink(new SourceCallbackSinkFunction(callbackId));
-			
+			logger.info("Dumping events to global window");
+			keyedEvents.window(GlobalWindows.create())
+					.trigger(PurgingTrigger.of(ContinuousProcessingTimeTrigger.of(Time.seconds(1))))
+					.apply(new GlobalWindowFunction(streams.split(","), filterExpression))
+					.addSink(new SourceCallbackSinkFunction(callbackId));
 		}
 	}
 
