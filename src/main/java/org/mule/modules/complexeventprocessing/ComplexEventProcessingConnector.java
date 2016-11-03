@@ -3,38 +3,34 @@ package org.mule.modules.complexeventprocessing;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger;
 import org.apache.flink.streaming.api.windowing.triggers.PurgingTrigger;
-import org.apache.flink.streaming.api.windowing.windows.GlobalWindow;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleMessage;
 import org.mule.api.annotations.Config;
 import org.mule.api.annotations.Connector;
 import org.mule.api.annotations.Processor;
 import org.mule.api.annotations.Source;
-import org.mule.api.annotations.param.Default;
 import org.mule.api.annotations.param.Optional;
 import org.mule.api.callback.SourceCallback;
 import org.mule.api.context.MuleContextAware;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.mule.modules.complexeventprocessing.config.ConnectorConfig;
 import org.mule.util.UUID;
 
@@ -74,10 +70,12 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 
 	public void startExecutionEnvironment() throws Exception {
 		logger.info("Starting Flink execution environment in background thread");
+		final CountDownLatch latch = new CountDownLatch(1);
 		Executors.newSingleThreadExecutor().execute(new Runnable() {
 			@Override
 			public void run() {
 				try {
+					latch.countDown();
 					executionEnvironment.execute();
 				} catch (Throwable t) {
 					logger.error("Error", t);
@@ -86,6 +84,7 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 				}
 			}
 		});
+		latch.await(1, TimeUnit.MINUTES);
 	}
 
 	@Processor
@@ -122,13 +121,13 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 					.apply(new StreamWindowFunction(streams.split(","), filterExpression))
 					.addSink(new SourceCallbackSinkFunction(callbackId));
 		} else {
-			logger.info("Dumping events to global window");
 			keyedEvents.window(GlobalWindows.create())
 					.trigger(PurgingTrigger.of(ContinuousProcessingTimeTrigger.of(Time.seconds(1))))
 					.apply(new GlobalWindowFunction(streams.split(","), filterExpression))
 					.addSink(new SourceCallbackSinkFunction(callbackId));
 		}
 	}
+
 
 	public ConnectorConfig getConfig() {
 		return config;
