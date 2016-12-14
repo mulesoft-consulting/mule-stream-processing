@@ -120,6 +120,7 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 					.addSource(new ObjectSource(stream), callbackId);
 			Table in = tableEnvironment.fromDataStream(dataStream, "id,message,timestamp");
 			tableEnvironment.registerTable(stream, in);
+			tableEnvironment.registerFunction("MEL", new ExpressionFunction());
 		}
 		
 		Table result = tableEnvironment.sql(query);
