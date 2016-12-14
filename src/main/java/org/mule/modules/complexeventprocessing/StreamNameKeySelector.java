@@ -1,6 +1,6 @@
 package org.mule.modules.complexeventprocessing;
 
-import java.util.Date;
+import java.sql.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

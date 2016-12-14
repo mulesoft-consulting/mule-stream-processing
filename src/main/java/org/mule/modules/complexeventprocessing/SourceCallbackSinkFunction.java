@@ -11,7 +11,7 @@ public class SourceCallbackSinkFunction implements SinkFunction<MuleMessage>{
 	
 	protected static Log logger = LogFactory.getLog(SourceCallbackSinkFunction.class);
 
-	final  String sourceCallback;	
+	final String sourceCallback;	
 
 	public SourceCallbackSinkFunction(String sourceCallback) {
 		super();
@@ -24,11 +24,6 @@ public class SourceCallbackSinkFunction implements SinkFunction<MuleMessage>{
 		// ToDo Ugly as sin workaround because SourceCallbacks aren't Serializable
 		ComplexEventProcessingConnector.callbackMap.get(sourceCallback).process(value);
 	}
-	
-//	@Override
-//	public void invoke(Tuple2<String, Object> value) throws Exception {
-//		logger.info("Sending event: " + value.f1);
-//		sourceCallback.process(value.f1);		
-//	}
+
 
 }

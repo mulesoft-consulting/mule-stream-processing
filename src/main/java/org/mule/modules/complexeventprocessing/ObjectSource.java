@@ -1,6 +1,6 @@
 package org.mule.modules.complexeventprocessing;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 
@@ -20,17 +20,24 @@ public class ObjectSource extends RichSourceFunction<Tuple3<String, MuleMessage,
 
 	volatile boolean isRunning = true;
 
-	public ObjectSource() {
+	final String topic;
+
+	public ObjectSource(String topic) {
 		super();
+		this.topic = topic;
 	}
 
 	@Override
-	public void run(final SourceFunction.SourceContext<Tuple3<String, MuleMessage, Date>> ctx) 
-			throws Exception {
+	public void run(final SourceFunction.SourceContext<Tuple3<String, MuleMessage, Date>> ctx) throws Exception {
 		logger.info("Running source function");
-		
-		ComplexEventProcessingConnector.dispatcher.subscribe(
-				Topics.any(), Tuple3.class, new EventSubscriber(ctx));
+
+		if (topic.equals("*")) {
+			ComplexEventProcessingConnector.dispatcher.subscribe(Topics.any(),
+					Tuple3.class, new EventSubscriber(ctx));
+		} else {
+			ComplexEventProcessingConnector.dispatcher.subscribe(Topics.match(topic), 
+					Tuple3.class, new EventSubscriber(ctx));
+		}
 		while (isRunning) {
 			Thread.sleep(100L);
 		}

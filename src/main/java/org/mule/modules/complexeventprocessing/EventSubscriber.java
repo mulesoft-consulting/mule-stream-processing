@@ -1,11 +1,12 @@
 package org.mule.modules.complexeventprocessing;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.table.Table;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext;
 import org.mule.api.MuleMessage;
@@ -31,7 +32,9 @@ public class EventSubscriber implements Subscriber<Tuple3<String,MuleMessage,Dat
 	@Override
 	public void onEvent(Event<Tuple3<String, MuleMessage, Date>> tuple) throws Exception {	
 		logger.info(id + " received event off bus: " + tuple.getSource().f1.getMessageRootId());
+		
 		ctx.collectWithTimestamp(tuple.getSource(), tuple.getSource().f2.getTime());
+		
 	}
 
 }

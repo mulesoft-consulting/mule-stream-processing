@@ -2,7 +2,7 @@ package org.mule.modules.complexeventprocessing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
+import java.sql.Date;
 import java.util.List;
 
 import org.apache.commons.logging.Log;

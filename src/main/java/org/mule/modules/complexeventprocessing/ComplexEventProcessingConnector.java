@@ -1,7 +1,8 @@
 package org.mule.modules.complexeventprocessing;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -12,7 +13,9 @@ import javax.inject.Inject;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.flink.api.java.table.StreamTableEnvironment;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.table.Table;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
@@ -54,6 +57,7 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 	ConnectorConfig config;
 
 	private StreamExecutionEnvironment executionEnvironment;
+	private StreamTableEnvironment tableEnvironment;
 
 	private boolean started = false;
 
@@ -64,6 +68,8 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 		executionEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
 		executionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
 		executionEnvironment.addDefaultKryoSerializer(org.mule.api.MuleMessage.class, MuleMessageSerializer.class);
+
+		tableEnvironment = StreamTableEnvironment.getTableEnvironment(executionEnvironment);
 
 		dispatcher = Dispatchers.asynchronousSafe();
 	}
@@ -97,7 +103,27 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 		}
 
 		logger.info("Broadcasting event " + message.getMessageRootId() + " to stream: " + stream);
-		dispatcher.publish(Topic.topic("events"), Tuple3.of(stream, message, new Date()));
+		dispatcher.publish(Topic.topic(stream), Tuple3.of(stream, message,
+				new Date(new java.util.Date().getTime())));
+	}
+
+	@Source
+	public synchronized void query(String query, String streams, final SourceCallback callback) 
+			throws Exception {
+		String callbackId = UUID.getUUID().toString();
+
+		callbackMap.put(callbackId, callback);
+
+		for (String stream : streams.split(",")) {
+			
+			DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment
+					.addSource(new ObjectSource(stream), callbackId);
+			Table in = tableEnvironment.fromDataStream(dataStream, "id,message,timestamp");
+			tableEnvironment.registerTable(stream, in);
+		}
+		
+		Table result = tableEnvironment.sql(query);
+		result.writeToSink(new SourceCallbackTableSink(callbackId));
 	}
 
 	@Source
@@ -110,7 +136,8 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 
 		logger.info("Registering event source for stream: " + streams);
 
-		DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment.addSource(new ObjectSource(),
+		// ToDo 911 fix this, i don't think we need a wildcard here and subsequent key filter on Flink
+		DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment.addSource(new ObjectSource("*"),
 				callbackId);
 		dataStream.assignTimestampsAndWatermarks(new StreamTimestampExtractor());
 
@@ -128,7 +155,6 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 		}
 	}
 
-
 	public ConnectorConfig getConfig() {
 		return config;
 	}
@@ -140,6 +166,6 @@ public class ComplexEventProcessingConnector implements MuleContextAware {
 	@Override
 	public void setMuleContext(MuleContext muleContext) {
 		this.muleContext = muleContext;
-
 	}
+
 }
