@@ -5,6 +5,7 @@
     <mule-stream-processing:config name="MuleStreamProcessing__Configuration"
         doc:name="MuleStreamProcessing: Configuration" />
 
+    <!-- Insert events into a stream (test1) -->
     <flow name="mule-stream-processing-exampleFlow-1">
         <http:listener config-ref="HTTP_Listener_Configuration"
             path="/1" doc:name="HTTP" />
@@ -12,6 +13,7 @@
             stream="test1" doc:name="MuleStreamProcessing" />
     </flow>
 
+    <!-- Insert events into a stream (test2) -->
     <flow name="mule-stream-processing-exampleFlow-2">
         <http:listener config-ref="HTTP_Listener_Configuration"
             path="/2" doc:name="HTTP" />
@@ -19,6 +21,7 @@
             stream="test2" doc:name="MuleStreamProcessing" />
     </flow>
 
+    <!-- Listen for events off streams test1 and test2 and emit messages as batch every 15 seconds -->
     <flow name="mule-stream-processing-exampleFlow1">
         <mule-stream-processing:listen
             config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
@@ -29,6 +32,7 @@
         </foreach>
     </flow>
 
+    <!-- Filter events off streams test1 and test2 with MEL and emit messages as batch every 15 seconds -->
     <flow name="cep-testFlow2">
         <mule-stream-processing:listen
             config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
@@ -41,9 +45,10 @@
         </foreach>
     </flow>
 
+    <!-- Use SQL to query off stream test1 and emit messages in realtime when the foo header is '1234 -->
     <flow name="cep-testFlow">
         <mule-stream-processing:query config-ref="MuleStreamProcessing__Configuration"
-            query="SELECT MEL('message.id',message) as id from test3 where id == '1234'"
+            query="SELECT MEL('message.inboundProperties['foo']',message) as header from test1 where header == '1234'"
             doc:name="ComplexEventProcessing (Streaming)" streams="test3" />
         <foreach doc:name="For Each">
             <logger message="QUERY RESULTS #[message.payload]" level="INFO"
