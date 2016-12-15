@@ -1,6 +1,57 @@
-# ComplexEventProcessing Anypoint Connector
+# Stream Processing Connector
 
-[Connector description including destination service or application with]
+```xml
+
+    <mule-stream-processing:config name="MuleStreamProcessing__Configuration"
+        doc:name="MuleStreamProcessing: Configuration" />
+
+    <flow name="mule-stream-processing-exampleFlow-1">
+        <http:listener config-ref="HTTP_Listener_Configuration"
+            path="/1" doc:name="HTTP" />
+        <mule-stream-processing:send config-ref="MuleStreamProcessing__Configuration"
+            stream="test1" doc:name="MuleStreamProcessing" />
+    </flow>
+
+    <flow name="mule-stream-processing-exampleFlow-2">
+        <http:listener config-ref="HTTP_Listener_Configuration"
+            path="/2" doc:name="HTTP" />
+        <mule-stream-processing:send config-ref="MuleStreamProcessing__Configuration"
+            stream="test2" doc:name="MuleStreamProcessing" />
+    </flow>
+
+    <flow name="mule-stream-processing-exampleFlow1">
+        <mule-stream-processing:listen
+            config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
+            interval="15" timeUnit="SECONDS" streams="test1,test2" />
+        <foreach doc:name="For Each">
+            <logger message="*** Messages off Streams 1 and 2: #[payload] ***"
+                level="INFO" doc:name="Logger" />
+        </foreach>
+    </flow>
+
+    <flow name="cep-testFlow2">
+        <mule-stream-processing:listen
+            config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
+            interval="15" timeUnit="SECONDS" streams="test1,test2"
+            filterExpression="return payload.state == &quot;NY&quot;" />
+
+        <foreach doc:name="For Each">
+            <logger message="*** STREAM 2 Got a message: #[payload] ***"
+                level="INFO" doc:name="Logger" />
+        </foreach>
+    </flow>
+
+    <flow name="cep-testFlow">
+        <mule-stream-processing:query config-ref="MuleStreamProcessing__Configuration"
+            query="SELECT MEL('message.id',message) as id from test3 where id == '1234'"
+            doc:name="ComplexEventProcessing (Streaming)" streams="test3" />
+        <foreach doc:name="For Each">
+            <logger message="QUERY RESULTS #[message.payload]" level="INFO"
+                doc:name="Logger" />
+        </foreach>
+    </flow>
+
+```
 
 # Mule supported versions
 Examples:
