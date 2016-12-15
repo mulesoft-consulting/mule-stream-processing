@@ -32,10 +32,10 @@ public class ObjectSource extends RichSourceFunction<Tuple3<String, MuleMessage,
 		logger.info("Running source function");
 
 		if (topic.equals("*")) {
-			ComplexEventProcessingConnector.dispatcher.subscribe(Topics.any(),
+			MuleStreamProcessing.dispatcher.subscribe(Topics.any(),
 					Tuple3.class, new EventSubscriber(ctx));
 		} else {
-			ComplexEventProcessingConnector.dispatcher.subscribe(Topics.match(topic), 
+			MuleStreamProcessing.dispatcher.subscribe(Topics.match(topic), 
 					Tuple3.class, new EventSubscriber(ctx));
 		}
 		while (isRunning) {

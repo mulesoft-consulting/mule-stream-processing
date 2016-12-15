@@ -25,7 +25,7 @@ public class MuleMessageSerializer extends Serializer<MuleMessage> {
 
 		final DefaultMuleMessage message = serializer.read(kryo, input, DefaultMuleMessage.class);
 		try {
-			DeserializationPostInitialisable.Implementation.init(message, ComplexEventProcessingConnector.muleContext);
+			DeserializationPostInitialisable.Implementation.init(message, MuleStreamProcessing.muleContext);
 		} catch (Exception e) {
 			throw new SerializationException("Could not read message", e);
 		}

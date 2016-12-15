@@ -42,7 +42,7 @@ public class StreamWindowFunction implements WindowFunction<Tuple3<String, MuleM
 			logger.info("Processing event in window: " + tuple.f1.getMessageRootId() + " for stream: " + tuple.f0);
 			if (streams.contains(tuple.f0)) {
 				if (filterExpression != null) {
-					if (ComplexEventProcessingConnector.muleContext.getExpressionManager().evaluateBoolean(filterExpression, tuple.f1)) {
+					if (MuleStreamProcessing.muleContext.getExpressionManager().evaluateBoolean(filterExpression, tuple.f1)) {
 						events.add(tuple.f1);
 					}
 				} else {
@@ -51,7 +51,7 @@ public class StreamWindowFunction implements WindowFunction<Tuple3<String, MuleM
 			}
 		}
 		DefaultMessageCollection collection = 
-				new DefaultMessageCollection(ComplexEventProcessingConnector.muleContext);
+				new DefaultMessageCollection(MuleStreamProcessing.muleContext);
 		collection.addMessages(events);
 		out.collect(collection);		
 	}

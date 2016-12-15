@@ -6,7 +6,7 @@ import org.mule.api.MuleMessage;
 public class ExpressionFunction extends ScalarFunction {
 	public Object eval(String expression, MuleMessage message) {
 		return 
-    			ComplexEventProcessingConnector.muleContext
+    			MuleStreamProcessing.muleContext
     			.getExpressionManager().evaluate(expression, message);
 		
 	}

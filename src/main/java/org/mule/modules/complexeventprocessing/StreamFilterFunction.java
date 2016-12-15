@@ -32,7 +32,7 @@ public class StreamFilterFunction implements FilterFunction<Tuple3<String, MuleM
 			return streams.contains(event.f0);
 		} else {
 			if (streams.contains(event.f0)) {
-				return ComplexEventProcessingConnector.muleContext.getExpressionManager()
+				return MuleStreamProcessing.muleContext.getExpressionManager()
 						.evaluateBoolean(filterExpression, event.f1);
 								
 			} else {

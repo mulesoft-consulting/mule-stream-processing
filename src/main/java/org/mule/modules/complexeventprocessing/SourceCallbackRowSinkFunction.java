@@ -26,7 +26,7 @@ public class SourceCallbackRowSinkFunction implements SinkFunction<Row >{
 		for (int i=0; i < row.productIterator().length(); i++) {
 			result.add(row.productElement(i));
 		}
-		ComplexEventProcessingConnector.callbackMap.get(sourceCallback).process(result);
+		MuleStreamProcessing.callbackMap.get(sourceCallback).process(result);
 	}
 
 }

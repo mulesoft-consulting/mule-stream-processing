@@ -4,7 +4,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.mule.modules</groupId>
-	<artifactId>complex-event-processing-connector</artifactId>
+	<artifactId>mule-streams-connector</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>mule-module</packaging>
 	<name>Mule ComplexEventProcessing Anypoint Connector</name>

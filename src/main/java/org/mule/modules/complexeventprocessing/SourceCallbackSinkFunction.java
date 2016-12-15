@@ -22,7 +22,7 @@ public class SourceCallbackSinkFunction implements SinkFunction<MuleMessage>{
 	public void invoke(MuleMessage value) throws Exception {
 		logger.info("Sending event: " + value.getMessageRootId());
 		// ToDo Ugly as sin workaround because SourceCallbacks aren't Serializable
-		ComplexEventProcessingConnector.callbackMap.get(sourceCallback).process(value);
+		MuleStreamProcessing.callbackMap.get(sourceCallback).process(value);
 	}
 
 
