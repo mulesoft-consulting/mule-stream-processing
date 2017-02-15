@@ -6,14 +6,14 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.flink.api.table.Row;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.types.Row;
 
-public class SourceCallbackRowSinkFunction implements SinkFunction<Row >{
+public class SourceCallbackRowSinkFunction implements SinkFunction<Row>{
 	
 	protected static Log logger = LogFactory.getLog(SourceCallbackSinkFunction.class);
 
-	final String sourceCallback;	
+	final String sourceCallback;
 
 	public SourceCallbackRowSinkFunction(String sourceCallback) {
 		super();
@@ -21,10 +21,11 @@ public class SourceCallbackRowSinkFunction implements SinkFunction<Row >{
 	}
 
 	@Override
-	public void invoke(Row row) throws Exception {		
+	public void invoke(Row row) throws Exception {
+
 		List<Object> result = new ArrayList<>();
-		for (int i=0; i < row.productIterator().length(); i++) {
-			result.add(row.productElement(i));
+		for (int i=0; i < row.getArity(); i++) {
+			result.add(row.getField(i));
 		}
 		if (result.size() > 0) {
 			MuleStreamProcessing.callbackMap.get(sourceCallback).process(result);

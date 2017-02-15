@@ -1,6 +1,6 @@
 package org.mule.modules.complexeventprocessing;
 
-import org.apache.flink.api.table.functions.ScalarFunction;
+import org.apache.flink.table.functions.ScalarFunction;
 import org.mule.api.MuleMessage;
 
 public class ExpressionFunction extends ScalarFunction {

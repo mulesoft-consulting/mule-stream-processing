@@ -1,14 +1,13 @@
 package org.mule.modules.complexeventprocessing;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.table.Row;
-import org.apache.flink.api.table.sinks.StreamTableSink;
-import org.apache.flink.api.table.sinks.TableSink;
-import org.apache.flink.api.table.typeutils.RowTypeInfo;
+import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.table.sinks.StreamTableSink;
+import org.apache.flink.table.sinks.TableSink;
+import org.apache.flink.types.Row;
 
-
-public class SourceCallbackTableSink  implements StreamTableSink<Row> {
+public class SourceCallbackTableSink implements StreamTableSink<Row> {
 
 	final String sourceCallback;
 	

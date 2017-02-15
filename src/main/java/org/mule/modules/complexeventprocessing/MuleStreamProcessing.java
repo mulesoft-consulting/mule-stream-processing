@@ -13,9 +13,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.flink.api.java.table.StreamTableEnvironment;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.table.Table;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
@@ -25,6 +23,8 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.triggers.ContinuousProcessingTimeTrigger;
 import org.apache.flink.streaming.api.windowing.triggers.PurgingTrigger;
+import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.mule.api.MuleContext;
 import org.mule.api.MuleMessage;
 import org.mule.api.annotations.Config;
@@ -118,6 +118,7 @@ public class MuleStreamProcessing implements MuleContextAware {
 			
 			DataStream<Tuple3<String, MuleMessage, Date>> dataStream = executionEnvironment
 					.addSource(new ObjectSource(stream), callbackId);
+
 			Table in = tableEnvironment.fromDataStream(dataStream, "id,message,timestamp");
 			tableEnvironment.registerTable(stream, in);
 			tableEnvironment.registerFunction("MEL", new ExpressionFunction());

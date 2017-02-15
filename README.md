@@ -2,60 +2,60 @@
 
 ```xml
 
-    <mule-stream-processing:config name="MuleStreamProcessing__Configuration"
-        doc:name="MuleStreamProcessing: Configuration" />
-
-    <!-- Insert events into a stream (test1) -->
-    <flow name="mule-stream-processing-exampleFlow-1">
-        <http:listener config-ref="HTTP_Listener_Configuration"
-            path="/1" doc:name="HTTP" />
-        <mule-stream-processing:send config-ref="MuleStreamProcessing__Configuration"
-            stream="test1" doc:name="MuleStreamProcessing" />
-    </flow>
-
-    <!-- Insert events into a stream (test2) -->
-    <flow name="mule-stream-processing-exampleFlow-2">
-        <http:listener config-ref="HTTP_Listener_Configuration"
-            path="/2" doc:name="HTTP" />
-        <mule-stream-processing:send config-ref="MuleStreamProcessing__Configuration"
-            stream="test2" doc:name="MuleStreamProcessing" />
-    </flow>
-
-    <!-- Listen for events off streams test1 and test2 and emit messages as batch every 15 seconds -->
-    <flow name="mule-stream-processing-exampleFlow1">
-        <mule-stream-processing:listen
-            config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
-            interval="15" timeUnit="SECONDS" streams="test1,test2" />
-        <foreach doc:name="For Each">
-            <logger message="*** Messages off Streams 1 and 2: #[payload] ***"
-                level="INFO" doc:name="Logger" />
-        </foreach>
-    </flow>
-
-    <!-- Filter events off streams test1 and test2 with MEL and emit messages as batch every 15 seconds -->
-    <flow name="cep-testFlow2">
-        <mule-stream-processing:listen
-            config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
-            interval="15" timeUnit="SECONDS" streams="test1,test2"
-            filterExpression="return payload.state == &quot;NY&quot;" />
-
-        <foreach doc:name="For Each">
-            <logger message="*** STREAM 2 Got a message: #[payload] ***"
-                level="INFO" doc:name="Logger" />
-        </foreach>
-    </flow>
-
-    <!-- Use SQL to query off stream test1 and emit messages in realtime when the foo header is '1234 -->
-    <flow name="cep-testFlow">
-        <mule-stream-processing:query config-ref="MuleStreamProcessing__Configuration"
-            query="SELECT MEL('message.inboundProperties['foo']',message) as header from test1 where header == '1234'"
-            doc:name="ComplexEventProcessing (Streaming)" streams="test3" />
-        <foreach doc:name="For Each">
-            <logger message="QUERY RESULTS #[message.payload]" level="INFO"
-                doc:name="Logger" />
-        </foreach>
-    </flow>
-
+     <mule-stream-processing:config name="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing: Configuration"/>
+      <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+       <flow name="mule-stream-processing-exampleFlow-1">
+          <http:listener config-ref="HTTP_Listener_Configuration"
+              path="/1" doc:name="HTTP" />
+          <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+          <mule-stream-processing:send config-ref="MuleStreamProcessing__Configuration"
+              stream="test1" doc:name="MuleStreamProcessing" />
+      </flow>
+  
+      <!-- Insert events into a stream (test2) -->
+      <flow name="mule-stream-processing-exampleFlow-2">
+          <http:listener config-ref="HTTP_Listener_Configuration"
+              path="/2" doc:name="HTTP" />
+          <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+          <mule-stream-processing:send config-ref="MuleStreamProcessing__Configuration"
+              stream="test2" doc:name="MuleStreamProcessing" />
+      </flow>
+  
+      <!-- Listen for events off streams test1 and test2 and emit messages as batch every 15 seconds -->
+      <flow name="mule-stream-processing-exampleFlow1">
+          <mule-stream-processing:listen
+              config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
+              interval="15" timeUnit="SECONDS" streams="test1,test2" />
+          <foreach doc:name="For Each">
+              <logger message="*** Messages off Streams 1 and 2: #[payload] ***"
+                  level="INFO" doc:name="Logger" />
+          </foreach>
+      </flow>
+  
+      <!-- Filter events off streams test1 and test2 with MEL and emit messages as batch every 15 seconds -->
+      <flow name="cep-testFlow2">
+          <mule-stream-processing:listen
+              config-ref="MuleStreamProcessing__Configuration" doc:name="MuleStreamProcessing (Streaming)"
+              interval="15" timeUnit="SECONDS" streams="test1,test2"
+              filterExpression="return payload.state == &quot;NY&quot;" />
+  
+          <foreach doc:name="For Each">
+              <logger message="*** STREAM 2 Got a message: #[payload] ***"
+                  level="INFO" doc:name="Logger" />
+          </foreach>
+      </flow>
+  
+      <!-- Use SQL to query off stream test1 and emit messages in real time when the foo header is '1234 -->
+      <flow name="cep-testFlow">
+         <mule-stream-processing:query config-ref="MuleStreamProcessing__Configuration"
+              query="SELECT MEL('message.inboundProperties.foo',message) from test1"
+              doc:name="ComplexEventProcessing (Streaming)" streams="test1,test3" />
+        
+          <foreach doc:name="For Each">
+              <logger message="QUERY RESULTS #[message.payload]" level="INFO"
+                  doc:name="Logger" />
+          </foreach>
+      </flow>
 ```
 
 # Mule supported versions
